@@ -15,7 +15,18 @@ class ApiSegmentController extends Controller
     {
         $authToken = $this->getAuthToken(self::USERNAME, self::PASSWORD);
 
-        return $this->getReport($authToken);
+        $reportId = $this->getReport($authToken);
+
+        $segments = $this->runReport($authToken, $reportId);
+
+        $totalClients = array_sum(array_column($segments, 'doc_count'));
+
+        foreach ($segments as &$segment) {
+            $segment['average_check'] = $segment['orders']['value'] > 0 ? round($segment['total']['value'] / $segment['orders']['value'], 2) : 0;
+            $segment['percentage_of_total'] = $totalClients > 0 ? round(($segment['doc_count'] / $totalClients) * 100, 2) : 0;
+        }
+        
+        return response()->json(['segments' => $segments]);
         
     }
 
@@ -58,11 +69,30 @@ class ApiSegmentController extends Controller
             return null;
 
         } catch(\Exception $e){
-            logger()->error('Error getting get report: ' . $e->getMessage());
+            logger()->error('Error getting report: ' . $e->getMessage());
 
             return response()->json(['error' => 'Failed to get report.'], 500);
         }
         
+    }
+
+    private function runReport(string $authToken, string $reportId)
+    {
+        $url = 'https://app.magic-of-numbers.ru/api/report/' . $reportId .'/run';
+
+        try{
+
+            $res = Http::withHeaders(['Authorization' => 'Bearer ' . $authToken])->get($url);
+
+            $res = $res->json();
+
+            return $res['aggregations']['segments']['buckets'] ?? [];
+
+        }catch(\Exception $e){
+            logger()->error('Error running report: ' . $e->getMessage());
+
+            return response()->json(['error' => 'Failed to run report.'], 500);
+        }
     }
 
 
