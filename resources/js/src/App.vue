@@ -1,25 +1,34 @@
 <template>
-    <h1>
-      {{ msg }}
-      <RouterLink :to="{ name: 'test1' }">test1</RouterLink>
-      <RouterLink :to="{ name: 'test2' }">test2</RouterLink>
-    </h1>
-    <p>
-      <RouterView></RouterView>
-    </p>
-  </template>
-  
-  <script>
+  <div>
+    <div class="h-screen flex mt-24 justify-center">
+      <div class="container mx-auto text-center">
+        <button v-if="showButton" @click="navigateToSegments" class="bg-red-500 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg">
+          Get Segments
+        </button>
+        <router-view v-else class="mt-4"></router-view>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
   import { ref } from 'vue';
-  import { RouterLink, RouterView } from 'vue-router';
-  
+  import { useRouter } from 'vue-router';
+
   export default {
     name: 'App',
     setup() {
-      const msg = ref('Welcome to Your Vue.js App');
-  
+      const router = useRouter();
+      const showButton = ref(true);
+
+      const navigateToSegments = () => {
+        router.push('/segments');
+        showButton.value = false;
+      };
+
       return {
-        msg,
+        navigateToSegments,
+        showButton,
       };
     },
   };
